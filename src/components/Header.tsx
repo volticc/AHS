@@ -1,0 +1,13 @@
+import LoginDropdown from './LoginDropdown';
+
+const Header = () => {
+  return (
+    <header className="fixed top-0 left-0 right-0 z-50 p-4 flex justify-end items-center">
+      <nav>
+        <LoginDropdown />
+      </nav>
+    </header>
+  );
+};
+
+export default Header;
