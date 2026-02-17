@@ -1,10 +1,16 @@
 import clientPromise from '@/lib/mongodb';
 
+interface SiteContent {
+  _id: string;
+  headline: string;
+  subtext: string;
+}
+
 async function getHomepageContent() {
   try {
     const client = await clientPromise;
     const db = client.db();
-    const content = await db.collection('site_content').findOne({ _id: 'homepage_content' });
+    const content = await db.collection<SiteContent>('site_content').findOne({ _id: 'homepage_content' });
 
     if (!content) {
       return { headline: '[HEADLINE]', subtext: '[Your content here. Edit in the admin panel.]' };
