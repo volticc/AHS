@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
-    await db.collection('site_content').updateOne(
+                await db.collection<SiteContent>('site_content').updateOne(
       { _id: CONTENT_ID },
       { $set: { headline, subtext, updatedAt: new Date() } },
       { upsert: true } // Creates the document if it doesn't exist
