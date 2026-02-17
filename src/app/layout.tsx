@@ -5,7 +5,7 @@ import './globals.css';
 import Header from '@/components/Header';
 
 const inter = localFont({
-  src: '../assets/fonts/Inter-Variable.woff2',
+  src: '../assets/fonts/Inter-Variable.woff2.ttf',
   display: 'swap',
   variable: '--font-inter',
 });
