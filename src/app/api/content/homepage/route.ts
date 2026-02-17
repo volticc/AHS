@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 
+interface SiteContent {
+  _id: string;
+  headline: string;
+  subtext: string;
+  updatedAt?: Date;
+}
+
 const CONTENT_ID = 'homepage_content';
 
 // GET: Fetch homepage content
@@ -8,7 +15,7 @@ export async function GET() {
   try {
     const client = await clientPromise;
     const db = client.db();
-    const content = await db.collection('site_content').findOne({ _id: CONTENT_ID });
+    const content = await db.collection<SiteContent>('site_content').findOne({ _id: CONTENT_ID });
 
     if (!content) {
       // If no content exists, return default values
