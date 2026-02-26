@@ -74,6 +74,7 @@ const Footer = () => (
     <div className="max-w-7xl mx-auto px-4 text-center">
       <p>&copy; {new Date().getFullYear()} After Hours Studios. All Rights Reserved.</p>
       <div className="mt-4 space-x-6">
+        <Link href="/devlogs" className="hover:text-primary">Dev Logs</Link>
         <Link href="/privacy" className="hover:text-primary">Privacy Policy</Link>
         <Link href="/terms" className="hover:text-primary">Terms of Service</Link>
         <Link href="/contact" className="hover:text-primary">Contact</Link>
