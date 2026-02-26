@@ -16,7 +16,7 @@ export default function CommunityPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [error, setError] = useState('');
+  const router = useRouter();
 
   const fetchSuggestions = async () => {
     const response = await fetch('/api/suggestions');
@@ -31,16 +31,20 @@ export default function CommunityPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const authorId = '60d5ec49a4d8f5e3a8a9a8b2'; // Placeholder
+    // The authorId would come from a user session in a real app
     const response = await fetch('/api/suggestions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, description, authorId }),
+      body: JSON.stringify({ title, description, authorId: 'placeholder_user_id' }),
     });
+
     if (response.ok) {
       setTitle('');
       setDescription('');
       fetchSuggestions(); // Refresh list
+    } else if (response.status === 401) {
+      // If user is not authenticated, redirect to login page
+      router.push('/login');
     } else {
       setError('Failed to submit suggestion.');
     }

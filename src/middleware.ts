@@ -3,18 +3,26 @@ import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 import { config } from '@/lib/config';
 
-// Define the strict shape of the JWT payload
 interface JWTPayload {
   userId: string;
   role: string;
   permissions: string[];
 }
 
-// This function can be marked `async` if using `await` inside
+async function verifyToken(token: string): Promise<{ payload: JWTPayload } | null> {
+  try {
+    const secret = new TextEncoder().encode(config.JWT_SECRET);
+    return await jwtVerify(token, secret) as { payload: JWTPayload };
+  } catch (err) {
+    return null;
+  }
+}
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const token = req.cookies.get('auth-token')?.value;
 
-  // Check for maintenance mode first
+  // 1. Maintenance Mode Check (no change)
   const settingsUrl = `${req.nextUrl.origin}/api/admin/settings`;
   try {
     const settingsRes = await fetch(settingsUrl);
@@ -28,30 +36,39 @@ export async function middleware(req: NextRequest) {
     console.error('Could not fetch site settings in middleware:', error);
   }
 
-  // Define protected routes
-  const protectedRoutes = ['/admin', '/dashboard'];
+  // 2. Protect API "write" actions for unauthenticated users
+  const isApiWrite = pathname.startsWith('/api/') && req.method !== 'GET';
+  const isPublicApi = pathname === '/api/auth/login';
 
-  if (protectedRoutes.some(p => pathname.startsWith(p))) {
-    const token = req.cookies.get('auth-token')?.value;
+  if (isApiWrite && !isPublicApi) {
+    if (!token) {
+      return NextResponse.json({ message: 'Authentication required' }, { status: 401 });
+    }
+    const verifiedToken = await verifyToken(token);
+    if (!verifiedToken) {
+      return NextResponse.json({ message: 'Invalid token' }, { status: 401 });
+    }
+  }
 
+  // 3. Protect front-end pages
+  const protectedPages = ['/admin', '/dashboard'];
+  if (protectedPages.some(p => pathname.startsWith(p))) {
     if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    try {
-      const secret = new TextEncoder().encode(config.JWT_SECRET);
-      const { payload } = await jwtVerify(token, secret) as { payload: JWTPayload };
+    const verifiedToken = await verifyToken(token);
+    if (!verifiedToken) {
+      return NextResponse.redirect(new URL('/login', req.url));
+    }
 
-      // Example of a permission check. You can expand this.
-      // For instance, to access '/admin/users', you might check for 'manage_users' permission.
+    // 4. Role-based permission checks for admin pages
+    if (pathname.startsWith('/admin')) {
+      const { payload } = verifiedToken;
       if (pathname.startsWith('/admin/users') && !payload.permissions.includes('manage_users')) {
         return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
-
-      return NextResponse.next();
-    } catch (err) {
-      console.error('JWT verification error:', err);
-      return NextResponse.redirect(new URL('/login', req.url));
+      // Add other specific admin permission checks here
     }
   }
 
