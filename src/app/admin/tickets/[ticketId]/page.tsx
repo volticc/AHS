@@ -62,7 +62,7 @@ export default function ViewTicketPage() {
       }
       const data = await response.json();
       // Filter for users who can be assigned tickets
-      setAssignableUsers(data.filter(u => ['Admin', 'Dev Lead', 'Owner'].includes(u.roleInfo.name)));
+      setAssignableUsers(data.filter((u: { _id: string, email: string, roleInfo: { name: string } }) => ['Admin', 'Dev Lead', 'Owner'].includes(u.roleInfo.name)));
     } catch (err: any) {
       setError(err.message); // Can reuse the same error state
     }
