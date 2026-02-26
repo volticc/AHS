@@ -41,7 +41,7 @@ export default function CreateUserPage() {
     const response = await fetch('/api/admin/users', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password, roleId }),
+      body: JSON.stringify({ email, password, roleId, actorId: '60d5ec49a4d8f5e3a8a9a8b1' }), // Placeholder actorId
     });
 
     const data = await response.json();

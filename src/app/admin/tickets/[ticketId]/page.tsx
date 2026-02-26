@@ -21,6 +21,7 @@ interface Ticket {
   category: string;
   createdAt: string;
   updatedAt: string;
+  assignedTo?: string;
   conversation: ConversationEntry[];
 }
 
