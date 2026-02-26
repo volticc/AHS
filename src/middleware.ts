@@ -38,7 +38,7 @@ export async function middleware(req: NextRequest) {
 
   // 2. Protect API "write" actions for unauthenticated users
   const isApiWrite = pathname.startsWith('/api/') && req.method !== 'GET';
-  const isPublicApi = pathname === '/api/auth/login';
+  const isPublicApi = ['/api/auth/login', '/api/auth/register'].includes(pathname);
 
   if (isApiWrite && !isPublicApi) {
     if (!token) {
