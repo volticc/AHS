@@ -27,19 +27,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
+    // Fetch the user's role and permissions safely
     const role = await db.collection('roles').findOne({ _id: new ObjectId(user.roleId) });
-    if (!role) {
-      return NextResponse.json({ message: 'User role not found' }, { status: 500 });
+    let permissionNames: string[] = [];
+
+    if (role && role.permissions && role.permissions.length > 0) {
+      const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
+      permissionNames = permissions.map(p => p.name);
     }
 
-    const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
-    const permissionNames = permissions.map(p => p.name);
-
-    // Create the JWT using the guaranteed-to-be-a-string secret from our config
+    // Create the JWT - JWT_SECRET is now guaranteed to be a string.
     const token = jwt.sign(
       {
         userId: user._id,
-        role: role.name,
+        role: role ? role.name : 'User', // Default to 'User' if role is somehow missing
         permissions: permissionNames,
       },
       config.JWT_SECRET, // Use the validated secret

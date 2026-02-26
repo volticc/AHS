@@ -33,7 +33,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md p-8 space-y-6 bg-gray-800/20 rounded-lg shadow-lg">
         <div className="text-center">
           {/* You can place the logo here */}
-          <h1 className="text-3xl font-bold text-primary">Admin Login</h1>
+          <h1 className="text-3xl font-bold text-center text-primary">Login</h1>
           <p className="text-secondary">After Hours Studios</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-6">
