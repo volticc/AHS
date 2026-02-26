@@ -14,34 +14,19 @@ async function verifyToken(token: string): Promise<{ payload: JWTPayload } | nul
     const secret = new TextEncoder().encode(config.JWT_SECRET);
     return await jwtVerify(token, secret) as { payload: JWTPayload };
   } catch (err) {
+    // Token is invalid
     return null;
   }
 }
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
-  // Exclude API routes from the maintenance check to prevent infinite loops.
-  if (!pathname.startsWith('/api/')) {
-    try {
-      const settingsUrl = `${req.nextUrl.origin}/api/admin/settings`;
-      const settingsRes = await fetch(settingsUrl);
-      if (settingsRes.ok) {
-        const settings = await settingsRes.json();
-        if (settings.maintenanceMode && !pathname.startsWith('/admin') && !pathname.startsWith('/login') && !pathname.startsWith('/maintenance')) {
-          return NextResponse.redirect(new URL('/maintenance', req.url));
-        }
-      }
-    } catch (error) {
-      console.error('Could not fetch site settings in middleware:', error);
-    }
-  }
-
   const token = req.cookies.get('auth-token')?.value;
 
   // API route protection
   const isApiWrite = pathname.startsWith('/api/') && req.method !== 'GET';
-  const isPublicApi = ['/api/auth/login', '/api/auth/register', '/api/admin/settings'].includes(pathname);
+  // The /api/admin/settings route is now read-only for the public, so it's not in this list.
+  const isPublicApi = ['/api/auth/login', '/api/auth/register'].includes(pathname);
 
   if (isApiWrite && !isPublicApi) {
     if (!token || !(await verifyToken(token))) {
@@ -57,12 +42,13 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
-    // Role-based permission checks
+    // Role-based permission checks for admin area
     if (pathname.startsWith('/admin')) {
       const { payload } = verifiedToken;
       if (pathname.startsWith('/admin/users') && !payload.permissions.includes('manage_users')) {
         return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
+      // Future admin permission checks can be added here
     }
   }
 
