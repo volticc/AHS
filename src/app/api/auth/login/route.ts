@@ -17,8 +17,8 @@ export async function POST(req: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
-    const user = await db.collection('users').findOne({ email });
-    if (!user) {
+    const user = await db.collection('users').findOne({ email: email.toLowerCase() });
+    if (!user || !user.password) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
@@ -27,29 +27,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Defensively get role and permissions
-    let roleName = 'User'; // Default role
+    // Hyper-defensive role and permission fetching
+    let roleName = 'User'; // Safe default
     let permissionNames: string[] = [];
 
-    if (user.roleId) {
+    if (user.roleId && ObjectId.isValid(user.roleId)) {
       try {
         const role = await db.collection('roles').findOne({ _id: new ObjectId(user.roleId) });
         if (role) {
-          roleName = role.name;
+          roleName = role.name || 'User'; // Fallback if name is missing
           if (role.permissions && Array.isArray(role.permissions) && role.permissions.length > 0) {
-            const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
-            permissionNames = permissions.map(p => p.name);
+            const validPermissionIds = role.permissions.filter(id => ObjectId.isValid(id));
+            const permissions = await db.collection('permissions').find({ _id: { $in: validPermissionIds } }).toArray();
+            permissionNames = permissions.map(p => p.name).filter(Boolean); // Ensure no null/undefined names
           }
         }
       } catch (roleError) {
-        console.error('Error fetching user role or permissions:', roleError);
-        // Non-fatal: proceed with default role and no permissions
+        console.error('Non-fatal error fetching role/permissions:', roleError);
+        // If this block fails, the user still gets logged in with default safe values.
       }
     }
 
     const token = jwt.sign(
       {
-        userId: user._id,
+        userId: user._id.toHexString(),
         role: roleName,
         permissions: permissionNames,
       },
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV !== 'development',
       sameSite: 'strict',
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24, // 1 day
       path: '/',
     });
 
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error('Login error:', error);
-    return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+    console.error('Critical login error:', error);
+    return NextResponse.json({ message: 'An internal server error occurred.' }, { status: 500 });
   }
 }

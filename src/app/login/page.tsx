@@ -24,8 +24,8 @@ export default function LoginPage() {
       });
 
       if (response.ok) {
-        // On successful login, redirect to the user's dashboard.
         router.push('/dashboard');
+        router.refresh(); // Ensures the page reloads with user session
       } else {
         const data = await response.json();
         setError(data.message || 'Invalid email or password.');
@@ -33,16 +33,15 @@ export default function LoginPage() {
     } catch (err) {
       setError('An error occurred. Please try again later.');
     } finally {
-      // This is crucial: always re-enable the button after the request is complete.
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md p-8 space-y-6 bg-gray-800/30 rounded-lg shadow-lg">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-deep-charcoal">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card-bg rounded-lg shadow-lg border border-glow-red/20">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-primary">Admin Login</h1>
+          <h1 className="text-3xl font-bold text-primary">Login</h1>
           <p className="text-secondary">After Hours Studios</p>
         </div>
 
@@ -57,7 +56,7 @@ export default function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 mt-1 text-primary bg-gray-700/50 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-red"
+              className="w-full px-3 py-2 mt-1 text-primary bg-surface-elevated border border-glow-red/30 rounded-md focus:outline-none focus:ring-2 focus:ring-rich-blood-red"
             />
           </div>
 
@@ -71,19 +70,19 @@ export default function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 mt-1 text-primary bg-gray-700/50 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-accent-red"
+              className="w-full px-3 py-2 mt-1 text-primary bg-surface-elevated border border-glow-red/30 rounded-md focus:outline-none focus:ring-2 focus:ring-rich-blood-red"
             />
           </div>
 
           {error && (
-            <p className="text-sm text-red-400 text-center font-semibold">{error}</p>
+            <p className="text-sm text-status-error text-center font-semibold">{error}</p>
           )}
 
           <div>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 font-bold text-white bg-accent-red rounded-lg hover:bg-accent-red/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-accent-red disabled:opacity-50 transition-opacity"
+              className="w-full py-3 font-bold text-white bg-dark-crimson rounded-lg hover:bg-rich-blood-red focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-card-bg focus:ring-rich-blood-red disabled:opacity-50 transition-all"
             >
               {isSubmitting ? 'Logging in...' : 'Login'}
             </button>
@@ -92,7 +91,7 @@ export default function LoginPage() {
 
         <p className="text-sm text-center text-secondary">
           Don't have an account? {' '}
-          <Link href="/register" className="font-medium text-accent-red hover:underline">
+          <Link href="/register" className="font-medium text-dark-crimson hover:underline">
             Sign up
           </Link>
         </p>
