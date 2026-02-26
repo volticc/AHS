@@ -1,41 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
+import { config } from '@/lib/config';
 
-const JWT_SECRET = process.env.JWT_SECRET;
+// Define the strict shape of the JWT payload
+interface JWTPayload {
+  userId: string;
+  role: string;
+  permissions: string[];
+}
 
+// This function can be marked `async` if using `await` inside
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Check for maintenance mode first
-  // This needs to be an absolute URL for the fetch to work in middleware
   const settingsUrl = `${req.nextUrl.origin}/api/admin/settings`;
   try {
     const settingsRes = await fetch(settingsUrl);
-    const settings = await settingsRes.json();
-
-    if (settings.maintenanceMode && !pathname.startsWith('/admin') && !pathname.startsWith('/login') && !pathname.startsWith('/maintenance')) {
-      return NextResponse.redirect(new URL('/maintenance', req.url));
+    if (settingsRes.ok) {
+      const settings = await settingsRes.json();
+      if (settings.maintenanceMode && !pathname.startsWith('/admin') && !pathname.startsWith('/login') && !pathname.startsWith('/maintenance')) {
+        return NextResponse.redirect(new URL('/maintenance', req.url));
+      }
     }
   } catch (error) {
     console.error('Could not fetch site settings in middleware:', error);
-    // If settings can't be fetched, proceed as normal rather than locking everyone out
   }
 
   // Define protected routes
   const protectedRoutes = ['/admin', '/dashboard'];
 
-  const isProtectedRoute = protectedRoutes.some(route => pathname.startsWith(route));
+  if (protectedRoutes.some(p => pathname.startsWith(p))) {
+    const token = req.cookies.get('auth-token')?.value;
 
-  if (isProtectedRoute) {
-    const cookie = req.cookies.get('auth-token');
-
-    if (!cookie) {
+    if (!token) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
 
     try {
-      const secret = new TextEncoder().encode(JWT_SECRET);
-      const { payload } = await jwtVerify(cookie.value, secret);
+      const secret = new TextEncoder().encode(config.JWT_SECRET);
+      const { payload } = await jwtVerify(token, secret) as { payload: JWTPayload };
 
       // Example of a permission check. You can expand this.
       // For instance, to access '/admin/users', you might check for 'manage_users' permission.
@@ -43,26 +48,12 @@ export async function middleware(req: NextRequest) {
         return NextResponse.redirect(new URL('/unauthorized', req.url));
       }
 
-      // If verification is successful, continue to the requested page
       return NextResponse.next();
     } catch (err) {
-      // If token is invalid, redirect to login
+      console.error('JWT verification error:', err);
       return NextResponse.redirect(new URL('/login', req.url));
     }
   }
 
   return NextResponse.next();
 }
-
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
-};
