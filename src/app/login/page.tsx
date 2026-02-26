@@ -23,15 +23,16 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         router.push('/dashboard');
-        router.refresh(); // Ensures the page reloads with user session
+        router.refresh();
       } else {
-        const data = await response.json();
-        setError(data.message || 'An unknown error occurred. Please check your credentials.');
+        setError(data.message || 'An unknown error occurred.');
       }
     } catch (err) {
-      setError('An error occurred. Please try again later.');
+      setError('Unable to connect to the server. Please try again later.');
     } finally {
       setIsSubmitting(false);
     }
