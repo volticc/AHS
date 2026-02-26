@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { serialize } from 'cookie';
 import { ObjectId } from 'mongodb';
-import { config } from '@/lib/config'; // Import the validated config
+import { config } from '@/lib/config';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,23 +27,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: 'Invalid credentials' }, { status: 401 });
     }
 
-    // Fetch the user's role and permissions safely
-    const role = await db.collection('roles').findOne({ _id: new ObjectId(user.roleId) });
+    // Defensively get role and permissions
+    let roleName = 'User'; // Default role
     let permissionNames: string[] = [];
 
-    if (role && role.permissions && role.permissions.length > 0) {
-      const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
-      permissionNames = permissions.map(p => p.name);
+    if (user.roleId) {
+      try {
+        const role = await db.collection('roles').findOne({ _id: new ObjectId(user.roleId) });
+        if (role) {
+          roleName = role.name;
+          if (role.permissions && Array.isArray(role.permissions) && role.permissions.length > 0) {
+            const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
+            permissionNames = permissions.map(p => p.name);
+          }
+        }
+      } catch (roleError) {
+        console.error('Error fetching user role or permissions:', roleError);
+        // Non-fatal: proceed with default role and no permissions
+      }
     }
 
-    // Create the JWT - JWT_SECRET is now guaranteed to be a string.
     const token = jwt.sign(
       {
         userId: user._id,
-        role: role ? role.name : 'User', // Default to 'User' if role is somehow missing
+        role: roleName,
         permissions: permissionNames,
       },
-      config.JWT_SECRET, // Use the validated secret
+      config.JWT_SECRET,
       { expiresIn: '1d' }
     );
 
