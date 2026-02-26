@@ -28,7 +28,7 @@ export default function LoginPage() {
         router.refresh(); // Ensures the page reloads with user session
       } else {
         const data = await response.json();
-        setError(data.message || 'Invalid email or password.');
+        setError(data.message || 'An unknown error occurred. Please check your credentials.');
       }
     } catch (err) {
       setError('An error occurred. Please try again later.');
