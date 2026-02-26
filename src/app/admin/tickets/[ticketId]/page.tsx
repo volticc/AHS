@@ -25,13 +25,18 @@ interface Ticket {
   conversation: ConversationEntry[];
 }
 
+interface AssignableUser {
+  _id: string;
+  email: string;
+}
+
 export default function ViewTicketPage() {
   const params = useParams();
   const { ticketId } = params;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [assignableUsers, setAssignableUsers] = useState([]);
+  const [assignableUsers, setAssignableUsers] = useState<AssignableUser[]>([]);
   const [newStatus, setNewStatus] = useState('');
   const [reply, setReply] = useState('');
   const [isInternalNote, setIsInternalNote] = useState(false);
