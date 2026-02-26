@@ -10,4 +10,5 @@ function getEnvVariable(key: string): string {
 
 export const config = {
   JWT_SECRET: getEnvVariable('JWT_SECRET'),
+  MONGODB_URI: getEnvVariable('MONGODB_URI'),
 };
