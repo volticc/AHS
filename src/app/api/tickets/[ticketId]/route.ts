@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { logAudit } from '@/lib/auditLog';
+
+// Define the strict shape of the data structures
+interface ConversationEntry {
+  authorId: ObjectId;
+  authorName: string;
+  authorRole: string;
+  message: string;
+  isInternalNote: boolean;
+  timestamp: Date;
+}
+
+interface Ticket {
+  _id: ObjectId;
+  userId: ObjectId;
+  subject: string;
+  category: string;
+  status: string;
+  assignedTo?: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+  conversation: ConversationEntry[];
+}
 
 // GET: Fetch a single ticket by its ID
 export async function GET(req: NextRequest, { params }: { params: { ticketId: string } }) {
@@ -8,15 +31,15 @@ export async function GET(req: NextRequest, { params }: { params: { ticketId: st
     const { ticketId } = params;
     const client = await clientPromise;
     const db = client.db();
+    const ticketsCollection = db.collection<Ticket>('tickets');
 
-    const ticket = await db.collection('tickets').findOne({ _id: new ObjectId(ticketId) });
+    const ticket = await ticketsCollection.findOne({ _id: new ObjectId(ticketId) });
 
     if (!ticket) {
       return NextResponse.json({ message: 'Ticket not found' }, { status: 404 });
     }
 
     return NextResponse.json(ticket, { status: 200 });
-
   } catch (error) {
     console.error(`Error fetching ticket ${params.ticketId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -27,7 +50,6 @@ export async function GET(req: NextRequest, { params }: { params: { ticketId: st
 export async function POST(req: NextRequest, { params }: { params: { ticketId: string } }) {
   try {
     const { ticketId } = params;
-    // In a real app, authorId, authorName, and authorRole would come from the logged-in user's session (JWT)
     const { authorId, authorName, authorRole, message, isInternalNote } = await req.json();
 
     if (!authorId || !authorName || !authorRole || !message) {
@@ -36,8 +58,9 @@ export async function POST(req: NextRequest, { params }: { params: { ticketId: s
 
     const client = await clientPromise;
     const db = client.db();
+    const ticketsCollection = db.collection<Ticket>('tickets');
 
-    const newConversationEntry = {
+    const newConversationEntry: ConversationEntry = {
       authorId: new ObjectId(authorId),
       authorName,
       authorRole,
@@ -46,7 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { ticketId: s
       timestamp: new Date(),
     };
 
-    const result = await db.collection('tickets').updateOne(
+    const result = await ticketsCollection.updateOne(
       { _id: new ObjectId(ticketId) },
       {
         $push: { conversation: newConversationEntry },
@@ -59,7 +82,6 @@ export async function POST(req: NextRequest, { params }: { params: { ticketId: s
     }
 
     return NextResponse.json({ message: 'Reply added successfully' }, { status: 200 });
-
   } catch (error) {
     console.error(`Error adding reply to ticket ${params.ticketId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
@@ -78,8 +100,9 @@ export async function PUT(req: NextRequest, { params }: { params: { ticketId: st
 
     const client = await clientPromise;
     const db = client.db();
+    const ticketsCollection = db.collection<Ticket>('tickets');
 
-    const updateFields: any = {
+    const updateFields: Partial<Pick<Ticket, 'status' | 'assignedTo' | 'updatedAt'>> & { updatedAt: Date } = {
       updatedAt: new Date(),
     };
 
@@ -91,7 +114,7 @@ export async function PUT(req: NextRequest, { params }: { params: { ticketId: st
       updateFields.assignedTo = new ObjectId(assignedTo);
     }
 
-    const result = await db.collection('tickets').updateOne(
+    const result = await ticketsCollection.updateOne(
       { _id: new ObjectId(ticketId) },
       { $set: updateFields }
     );
@@ -101,7 +124,6 @@ export async function PUT(req: NextRequest, { params }: { params: { ticketId: st
     }
 
     return NextResponse.json({ message: 'Ticket updated successfully' }, { status: 200 });
-
   } catch (error) {
     console.error(`Error updating ticket ${params.ticketId}:`, error);
     return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
