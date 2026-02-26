@@ -9,18 +9,30 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        base: '#1a1a1a', // Deep charcoal / near-black
-        primary: '#ffffff',
-        secondary: '#a0a0a0', // Muted off-white
-        accent: {
-          red: '#990000', // Dark crimson red
-          glow: '#ff0000',
+        // New Cinematic Dark Theme Palette
+        'deep-charcoal': '#0D0D0F',
+        'dark-crimson': '#7A0F14',
+        'rich-blood-red': '#A4161A',
+        'glow-red': '#3E0A0C',
+        'card-bg': '#151518',
+        'surface-elevated': '#1C1C20',
+        primary: '#E8E6E3',      // Primary Text
+        secondary: '#A1A1AA',    // Secondary Text
+        subtle: '#6B6B73',       // Disabled / Subtle Text
+
+        // Accent color alias for easier use
+        'accent-red': '#7A0F14',
+
+        // Status Colors
+        status: {
+          success: '#2E7D32',
+          warning: '#B08900',
+          error: '#B3261E',
+          info: '#1E3A8A',
         },
       },
       backgroundImage: {
-        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-conic':
-          'conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))',
+        'cinematic-gradient': 'linear-gradient(135deg, #0D0D0F 0%, #1A0F12 40%, #7A0F14 100%)',
       },
     },
   },
