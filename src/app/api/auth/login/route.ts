@@ -5,8 +5,11 @@ import jwt from 'jsonwebtoken';
 import { serialize } from 'cookie';
 import { ObjectId } from 'mongodb';
 
+// Validate critical environment variables at the module level.
+// This makes it impossible for the app to run without the secret, and satisfies TypeScript.
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
+  console.error('FATAL ERROR: JWT_SECRET is not defined. The application cannot start.');
   throw new Error('JWT_SECRET is not defined in the environment variables');
 }
 
@@ -42,7 +45,7 @@ export async function POST(req: NextRequest) {
     const permissions = await db.collection('permissions').find({ _id: { $in: role.permissions } }).toArray();
     const permissionNames = permissions.map(p => p.name);
 
-    // Create the JWT
+    // Create the JWT - JWT_SECRET is now guaranteed to be a string.
     const token = jwt.sign(
       {
         userId: user._id,
