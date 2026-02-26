@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 // Simplified Suggestion type for the client
 interface Suggestion {
@@ -16,6 +17,7 @@ export default function CommunityPage() {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [error, setError] = useState('');
   const router = useRouter();
 
   const fetchSuggestions = async () => {

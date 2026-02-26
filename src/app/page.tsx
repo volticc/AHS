@@ -11,9 +11,6 @@ const HeroSection = () => (
         <Link href="/projects" className="px-8 py-3 bg-accent-red text-white font-semibold rounded-lg hover:bg-accent-red/80 transition-transform hover:scale-105">
           Our Projects
         </Link>
-        <Link href="/community" className="px-8 py-3 bg-gray-700/50 text-primary font-semibold rounded-lg hover:bg-gray-600/50 transition-transform hover:scale-105">
-          Join Us
-        </Link>
       </div>
     </div>
   </div>
