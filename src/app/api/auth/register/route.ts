@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     const userRole = await db.collection('roles').findOne({ name: 'User' });
     if (!userRole) {
       // This is a critical setup issue. The 'User' role should always exist.
-      console.error('Default 'User' role not found. Please seed the database.');
+      console.error("Default 'User' role not found. Please seed the database.");
       return NextResponse.json({ message: 'An unexpected error occurred during registration.' }, { status: 500 });
     }
 
